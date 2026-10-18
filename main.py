@@ -92,8 +92,12 @@ async def get_active_orders(current_restaurant: Restaurant = Depends(verify_rest
 # ==========================================
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    # Buscara el archivo index.html en la misma carpeta de forma limpia
-    if os.path.exists("index.html"):
-        with open("index.html", "r", encoding="utf-8") as f:
-            return f.read()
-    return "Error: index.html no encontrado en el servidor."
+    # Busca de forma automatica en la raiz o en subcarpetas tipicas
+    posibles_rutas = ["index.html", "frontend/index.html", "backend/index.html"]
+    
+    for ruta in posibles_rutas:
+        if os.path.exists(ruta):
+            with open(ruta, "r", encoding="utf-8") as f:
+                return f.read()
+                
+    return "Error: index.html no encontrado en el servidor. Verifique las carpetas en GitHub."
