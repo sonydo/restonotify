@@ -1,19 +1,14 @@
-﻿# main.py
 import os
 from typing import List
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.responses import HTMLResponse
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 
-# Configuración de base de datos persistente para la nube
-# Render borra los archivos locales al reiniciar en su plan gratuito. 
-# Nota: Para persistencia real a largo plazo en Render Free se usa una BD externa, 
-# pero este código inicial te generará el archivo funcional en '/tmp'.
 DATABASE_URL = "sqlite:////tmp/restonotify_cloud.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 # ==========================================
-# MODELOS DE LA BASE DE DATOS
+# DATABASE MODELS
 # ==========================================
 class Restaurant(SQLModel, table=True):
     id: str = Field(primary_key=True)  
@@ -29,7 +24,7 @@ class Order(SQLModel, table=True):
     status: str = Field(default="PREPARACION") 
 
 # ==========================================
-# CONFIGURACIÓN DE LA APP
+# APP CONFIGURATION
 # ==========================================
 app = FastAPI(title="RestoNotify Cloud API")
 
@@ -45,11 +40,11 @@ async def verify_restaurant(x_restaurant_token: str = Header(...), session: Sess
     statement = select(Restaurant).where(Restaurant.api_token == x_restaurant_token)
     restaurant = session.exec(statement).first()
     if not restaurant:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        raise HTTPException(status_code=401, detail="Token invalido")
     return restaurant
 
 # ==========================================
-# ENDPOINTS DE LA API
+# API ENDPOINTS
 # ==========================================
 @app.post("/admin/restaurants")
 async def register_restaurant(restaurant: Restaurant, session: Session = Depends(get_session)):
@@ -71,7 +66,6 @@ async def send_ready_notification(order_id: str, current_restaurant: Restaurant 
     if not order:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     
-    # Aquí se dispara la integración real con Meta Cloud API
     order.status = "NOTIFICADO"
     session.add(order)
     session.commit()
@@ -94,7 +88,7 @@ async def get_active_orders(current_restaurant: Restaurant = Depends(verify_rest
     return session.exec(statement).all()
 
 # ==========================================
-# INTERFAZ WEB DEL FRONTEND (HTML EMBEBIDO)
+# FRONTEND UI (EMBEDDED HTML)
 # ==========================================
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
@@ -124,7 +118,7 @@ async def read_index():
             <section>
                 <div class="flex items-center space-x-2 mb-4 border-b border-emerald-500/30 pb-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h2 class="text-lg font-bold uppercase tracking-wider text-emerald-400">En Preparación</h2>
+                    <h2 class="text-lg font-bold uppercase tracking-wider text-emerald-400">En Preparacion</h2>
                 </div>
                 <div id="active-orders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
             </section>
@@ -143,7 +137,7 @@ async def read_index():
             const RESTAURANT_TOKEN = urlParams.get('token');
 
             if (!RESTAURANT_TOKEN) {
-                alert("Error: Falta el parámetro ?token= en la URL");
+                alert("Error: Falta el parametro ?token= en la URL");
             }
 
             async function loadOrders() {
@@ -166,26 +160,26 @@ async def read_index():
             }
 
             function renderPrep(order) {
-                const html = `<div class="bg-slate-800 border-2 border-slate-700 rounded-xl p-5 flex flex-col justify-between min-h-[180px]" id="order-${order.id}">
-                    <div><span class="text-2xl font-black text-white font-mono">#${order.id}</span><h3 class="text-lg font-bold text-slate-200 mt-2">${order.customer_name}</h3></div>
-                    <button onclick="notifyOrder('${order.id}', '${order.customer_name}')" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-sm uppercase tracking-wider cursor-pointer">🔔 Notificar Listo</button>
+                const html = `<div class="bg-slate-800 border-2 border-slate-700 rounded-xl p-5 flex flex-col justify-between min-h-[180px]" id="order-\${order.id}">
+                    <div><span class="text-2xl font-black text-white font-mono">#\${order.id}</span><h3 class="text-lg font-bold text-slate-200 mt-2">\${order.customer_name}</h3></div>
+                    <button onclick="notifyOrder('\${order.id}', '\${order.customer_name}')" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-sm uppercase tracking-wider cursor-pointer">🔔 Notificar Listo</button>
                 </div>`;
                 document.getElementById('active-orders').insertAdjacentHTML('beforeend', html);
             }
 
             function renderNotified(order) {
-                const html = `<div class="bg-slate-800/60 border-2 border-amber-500/50 rounded-xl p-5 flex flex-col justify-between min-h-[180px]" id="order-${order.id}">
-                    <div><span class="text-2xl font-black text-slate-300 font-mono">#${order.id}</span><h3 class="text-lg font-bold text-slate-400 mt-2">${order.customer_name}</h3></div>
-                    <button onclick="deliverOrder('${order.id}')" class="w-full mt-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-lg text-sm uppercase tracking-wider cursor-pointer">✔️ Entregado</button>
+                const html = `<div class="bg-slate-800/60 border-2 border-amber-500/50 rounded-xl p-5 flex flex-col justify-between min-h-[180px]" id="order-\${order.id}">
+                    <div><span class="text-2xl font-black text-slate-300 font-mono">#\${order.id}</span><h3 class="text-lg font-bold text-slate-400 mt-2">\${order.customer_name}</h3></div>
+                    <button onclick="deliverOrder('\${order.id}')" class="w-full mt-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-lg text-sm uppercase tracking-wider cursor-pointer">✔️ Entregado</button>
                 </div>`;
                 document.getElementById('notified-orders').insertAdjacentHTML('beforeend', html);
             }
 
             async function notifyOrder(id, name) {
-                const card = document.getElementById(`order-${id}`);
+                const card = document.getElementById(`order-\${id}`);
                 card.style.opacity = '0.5';
                 try {
-                    const res = await fetch(`/v1/notifications/ready/${id}`, {
+                    const res = await fetch(`/v1/notifications/ready/\${id}`, {
                         method: 'POST', headers: { "X-Restaurant-Token": RESTAURANT_TOKEN }
                     });
                     if (res.ok) { card.remove(); renderNotified({id, customer_name: name}); }
@@ -193,6 +187,13 @@ async def read_index():
             }
 
             async function deliverOrder(id) {
-                const card = document.getElementById(`order-${id}`);
+                const card = document.getElementById(`order-\${id}`);
                 card.style.opacity = '0';
                 try {
+                    const res = await fetch(`/v1/orders/\${id}/deliver`, {
+                        method: 'POST', headers: { "X-Restaurant-Token": RESTAURANT_TOKEN }
+                    });
+                    if (res.ok) setTimeout(() => card.remove(), 200);
+                } catch (e) { card.style.opacity = '1'; }
+            }
+
