@@ -1,7 +1,3 @@
-### 2. Archivo de Lista de Librerías (`requirements.txt`)
-Este archivo le dice a Render qué herramientas de Python tiene que descargar e instalar de manera automática.
-
-```text
 fastapi==0.110.0
 uvicorn==0.28.0
 sqlmodel==0.0.16
